@@ -21,20 +21,6 @@ def key_derivation():
 
 #print("Average time taken = " + str(sum(times) / len(times)))
 
-data = "This is plaintext. You can read it"
-print(data)
-
-
-key = key_derivation()
-cipher = AES.new(key, AES.MODE_EAX)
-nonce = cipher.nonce
-cipher_text, tag = cipher.encrypt_and_digest(data.encode('UTF-8'))
-
-print(cipher_text)
-
-decipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
-deciphered_text = decipher.decrypt(cipher_text)
-print(deciphered_text.decode('UTF-8'))
 
 
 
