@@ -1,6 +1,5 @@
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA3_512
-from Crypto.Cipher import AES
 import timeit
 
 
