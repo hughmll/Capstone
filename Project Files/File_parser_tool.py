@@ -3,6 +3,7 @@ with open("test_conf_file.txt", "rb") as bytes_text:
 
 var_dict = {}
 data = data.decode().split("\n")
+
 for item in data:
     if "[Interface]" in item:
         item.replace("[Interface]", "")
