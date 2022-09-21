@@ -3,8 +3,9 @@ from Crypto.Hash import SHA3_512
 import timeit
 
 
-def key_derivation():
-    password = b'purplemonkeydishwasher'
+def key_derivation(user_input):
+    #password = b'purplemonkeydishwasher'
+    password = user_input
     salt = b'A1bV7t6efsp'
     key = PBKDF2(password, salt, dkLen=32, count=50000, hmac_hash_module=SHA3_512)
     return key
