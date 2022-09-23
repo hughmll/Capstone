@@ -88,7 +88,7 @@ speak("The document has now been decrypted")
 file_parser(data)
 
 print(var_dict)
-time.sleep(5)
+speak(str(var_dict))
 
 
 
