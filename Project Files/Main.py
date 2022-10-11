@@ -6,9 +6,10 @@ import time
 from gtts import gTTS
 import os
 import playsound
+from colorama import Fore, Back, Style
 
-os.system('color f0')
 var_dict = {}
+os.system('color f0')
 
 def speak(speech):
     tts = gTTS(text=speech, lang='en', tld='com.au')
@@ -28,18 +29,23 @@ def encryption(user_input):
     cipher_text, tag = cipher.encrypt_and_digest(plaintext_data)
     print(cipher_text)
     with open("Encrypted_conf_file.txt", "wb") as encrypted_file:
-        encrypted_file.write(nonce)
-        encrypted_file.write(cipher_text)
+        encrypted_file.write(nonce) #writes 16 byte nonce to file first
+        encrypted_file.write(tag) #followed by 16 byte tag
+        encrypted_file.write(cipher_text) #followed by the ciphertext
 
 def decryption(user_input):
     password = user_input
     key = key_derivation(password)
     with open("Encrypted_conf_file.txt",  "rb") as encrypted_data:
-        nonce = encrypted_data.read(16)
-        cipher_text2 = encrypted_data.read()
-    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
-    deciphered_text = cipher.decrypt(cipher_text2)
-    print("The deciphered text is: \n ")
+        nonce = encrypted_data.read(16) #reads first 16 bytes of encrypted file to grab nonce value for passing to key object generator
+    with open("Encrypted_conf_file.txt", "rb") as encrypted_data:
+        encrypted_data.seek(16) #opens file again and moves  to 16 byte offset from beginning of file
+        tag = encrypted_data.read(16) #reads only 16 bytes after 16 byte offset to get MAC tag for verification
+    with open("Encrypted_conf_file.txt", "rb") as encrypted_data:
+        encrypted_data.seek(32) #moves to 32 byte offset from beginning of file (to skip nonce and tag)
+        cipher_text2 = encrypted_data.read() # reads rest of file after offset to get ciphertext only
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce) # new key object instantiated for decryption
+    deciphered_text = cipher.decrypt_and_verify(cipher_text2, tag) #ciphertext decrypted and tag verified
     print(deciphered_text.decode())
 
 with open("test_conf_file.txt", "rb") as bytes_text:
@@ -60,30 +66,73 @@ def file_parser(x):
             value = item.split(" = ")[1]
             var_dict[key] = value
 
-print("Please enter a password to encrypt the document. You will need this password later to decrypt the document")
-speak("Please enter a password to encrypt the document. You will need this password later to decrypt the document")
+print("""
+ ######  ########  ######  ##     ## ########  ######## 
+##    ## ##       ##    ## ##     ## ##     ## ##       
+##       ##       ##       ##     ## ##     ## ##       
+ ######  ######   ##       ##     ## ########  ######   
+      ## ##       ##       ##     ## ##   ##   ##       
+##    ## ##       ##    ## ##     ## ##    ##  ##       
+ ######  ########  ######   #######  ##     ## ########
+ 
+######## #### ##       ######## 
+##        ##  ##       ##       
+##        ##  ##       ##       
+######    ##  ##       ######   
+##        ##  ##       ##       
+##        ##  ##       ##       
+##       #### ######## ######## 
+
+########  ########   #######  ########  #######  ######## ##    ## ########  ######## 
+##     ## ##     ## ##     ##    ##    ##     ##    ##     ##  ##  ##     ## ##       
+##     ## ##     ## ##     ##    ##    ##     ##    ##      ####   ##     ## ##       
+########  ########  ##     ##    ##    ##     ##    ##       ##    ########  ######   
+##        ##   ##   ##     ##    ##    ##     ##    ##       ##    ##        ##       
+##        ##    ##  ##     ##    ##    ##     ##    ##       ##    ##        ##       
+##        ##     ##  #######     ##     #######     ##       ##    ##        ########
+
+""")
+
+print("""Welcome to the secure file prototype: a file encryption and decryption tool. This tool allows you to encrypt
+a plaintext file with a password of your choice. The file can then be decrypted by re-entering the password.
+The contents of the file before and after decryption will be displayed and read out. Lets get started.\n""")
+speak("""Welcome to the prototype file encryption and decryption tool. 
+This tool allows you to encrypt a plaintext file with a password of your choice. 
+The file can then be decrypted by re-entering the password.
+The contents of the file before and after decryption will be displayed and read out. 
+Lets get started.""")
+
+
+print("Please type a password below and press enter to encrypt the test file. You will need this password later to decrypt the file:")
+speak("Please type a password below and press enter to encrypt the test file. You will need this password later to decrypt the file")
 password = input()
 password = password.encode()
 if password != "":
-    print("You have successfully input a password")
+    print("\nYou have successfully input a password")
     speak("You have successfully input a password")
 else:
     print("No password entered")
     speak("No password entered")
+    exit()
 
 #time.sleep(3)
 
-print("The document will now be encrypted. The ciphertext will be displayed below\n")
-speak("The document will now be encrypted. The ciphertext will be displayed below")
+print("\nThe test file will now be encrypted. The encrypted text will be displayed below\n")
+speak("The test file will now be encrypted. The encrypted text will be displayed below")
 encryption(password)
 
-print("\nThe document will now be decrypted. The plaintext will be displayed below\n")
-speak("The document will now be decrypted. The plaintext will be displayed below")
+print("\nPlease enter your password below to decrypt the test file")
+speak("Please enter your password below to decrypt the test file")
+password = input()
+password = password.encode()
+
+print("\nThe test file will now be decrypted. The plaintext will be displayed below\n")
+speak("The test file will now be decrypted. The plaintext will be displayed below")
 decryption(password)
 
 time.sleep(2)
-print("\nThe document has now been decrypted\n")
-speak("The document has now been decrypted")
+print("\nThe test file has now been decrypted\n")
+speak("The test file has now been decrypted")
 
 file_parser(data)
 
