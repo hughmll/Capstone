@@ -2,7 +2,7 @@ from Crypto.Cipher import AES
 from PBKDF import *
 
 #encrypted_data=[]
-user_input = b'atlanticwax99'
+user_input = b'atlanticwax99' #hardcoded password for testing purposes. Main.py uses byte-encoded user input
 
 def encryption(user_input):
     with open("test_conf_file.txt", "rb") as plaintext_file:
@@ -31,8 +31,8 @@ def decryption(user_input):
     with open("Encrypted_conf_file.txt", "rb") as encrypted_data:
         encrypted_data.seek(32) #moves to 32 byte offset from beginning of file (to skip nonce and tag)
         cipher_text2 = encrypted_data.read() # reads rest of file after offset to get ciphertext only
-    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
-    deciphered_text = cipher.decrypt_and_verify(cipher_text2, tag)
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce) # new key object instantiated for decryption
+    deciphered_text = cipher.decrypt_and_verify(cipher_text2, tag) #ciphertext decrypted and tag verified
     print(deciphered_text.decode())
 
 decryption(user_input)
