@@ -95,11 +95,11 @@ print("""
 
 print("""Welcome to the secure file prototype: a file encryption and decryption tool. This tool allows you to encrypt
 a plaintext file with a password of your choice. The file can then be decrypted by re-entering the password.
-The contents of the file before and after decryption will be displayed and read out. Lets get started.\n""")
+The encrypted text will be displayed and the decrypted text will be displayed and read out. Lets get started.\n""")
 speak("""Welcome to the prototype file encryption and decryption tool. 
 This tool allows you to encrypt a plaintext file with a password of your choice. 
 The file can then be decrypted by re-entering the password.
-The contents of the file before and after decryption will be displayed and read out. 
+The encrypted text will be displayed and the decrypted text will be displayed and read out.
 Lets get started.""")
 
 
