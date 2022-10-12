@@ -20,8 +20,8 @@ def encryption(user_input):
 
 encryption(user_input)
 
-def decryption(user_input):
-    password = user_input
+def decryption():
+    password = input("Enter password for decryption: ").encode()
     key = key_derivation(password)
     with open("Encrypted_conf_file.txt",  "rb") as encrypted_data:
         nonce = encrypted_data.read(16) #reads first 16 bytes of encrypted file to grab nonce value for passing to key object generator
@@ -31,8 +31,15 @@ def decryption(user_input):
     with open("Encrypted_conf_file.txt", "rb") as encrypted_data:
         encrypted_data.seek(32) #moves to 32 byte offset from beginning of file (to skip nonce and tag)
         cipher_text2 = encrypted_data.read() # reads rest of file after offset to get ciphertext only
-    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce) # new key object instantiated for decryption
-    deciphered_text = cipher.decrypt_and_verify(cipher_text2, tag) #ciphertext decrypted and tag verified
-    print(deciphered_text.decode())
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce) # new encryption object instantiated for decryption
+    #deciphered_text = cipher.decrypt_and_verify(cipher_text2) #ciphertext decrypted and tag verified
+    try:
+        deciphered_text = cipher.decrypt_and_verify(cipher_text2, tag) #ciphertext decrypted and tag verified
+    except ValueError:
+        print("Decryption failed. Either your password is incorrect or the file has been altered")
+        decryption()
+    else:
+        print(deciphered_text.decode())
 
-decryption(user_input)
+decryption()
+
