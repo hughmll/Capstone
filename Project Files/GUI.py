@@ -10,8 +10,8 @@ layout = [[sg.Text('Click browse to find your configuration file'), sg.InputText
           [sg.Text('Enter password to decrypt file here         '), sg.InputText(key='-PASSWORD-', password_char='*')],
           [sg.Text('', text_color='Red', key='-ERROR-')],
           [sg.Button('Decrypt')],
-          [sg.Text('IP Address'), sg.Input(readonly=True, key='-ADDRESS-', size=(16,1))],
-          [sg.Text('DNS         '), sg.Input(readonly=True, key='-DNS-',size=(16,1))]]
+          [sg.Text('Server Address'), sg.Input(readonly=True, key='-SERVER-', size=(25,1))],
+          [sg.Text('DNS               '), sg.Input(readonly=True, key='-DNS-',size=(25,1))]]
 
 
 
@@ -54,7 +54,8 @@ while True:
             continue    # If result is 1, returns to start of loop to allow for new 'Decrypt' event (user can try entering password again)
         #data = test_file.read()
         file_parser(decrypted_text, var_dict)
-        window['-ADDRESS-'].update(var_dict['Address'])
+        window['-SERVER-'].update(var_dict['Endpoint'])
         window['-DNS-'].update(var_dict['DNS'])
+        print(var_dict)
 
 window.close()
