@@ -6,15 +6,22 @@ from Crypto.Hash import SHA3_512 #required unless importing Encrypt_Decrypt.py
 from Crypto.Cipher import AES #required unless importing Encrypt_Decrypt.py
 import os
 import tempfile
+### WCAG 2.1 success criteria:
+#1.4.4 > dynamically resize text up to 200% of original without assistive software
+#2.4.9 > purpose of each link/button identified from link/button text alone (FLASH27)
+#2.2.3 > timing is not essential part of the event or activity
+#2.2.6 > no requirement to warn users of timeouts as data should be preserved beyond 20 hours if application left running if not action taken
+#1.4.3 > text contrast ratio of at least 4.5:1
 
 sg.theme('SystemDefault')
-layout = [[sg.Text('Click browse to find your configuration file'), sg.InputText(readonly=True), sg.FileBrowse('Browse', key='-FILE-')],
-          [sg.Text('Enter password to decrypt file here         '), sg.InputText(key='-PASSWORD-', password_char='*')],
+layout = [[sg.Text('Click browse to find your configuration file', font=None, key='-BROWSE-'), sg.Push(), sg.InputText(readonly=True,), sg.FileBrowse('Browse', key='-FILE-', font=None)],
+          [sg.Text('Enter password to decrypt file here'), sg.Push(), sg.InputText(key='-PASSWORD-', password_char='*')],
           [sg.Text('', text_color='Red', key='-ERROR-')],
           [sg.Text('', text_color='Green', key='-SUCCESS-')],
           [sg.Button('Decrypt')],
           [sg.Text('Server Address'), sg.Input(readonly=True, key='-SERVER-', size=(25,1)), sg.Push(), sg.Button('Connect', visible=False, key='-CONNECT-')],
-          [sg.Text('DNS                '), sg.Input(readonly=True, key='-DNS-',size=(25,1)), sg.Push(), sg.Button('Disconnect', visible=False, key='-DISCONNECT-')]]
+          [sg.Text('DNS                '), sg.Input(readonly=True, key='-DNS-', size=(25,1)), sg.Push(), sg.Button('Disconnect', visible=False, key='-DISCONNECT-')],
+          [sg.Button(visible=False, key='-INPUT-', bind_return_key=True)]]
 
 
 
@@ -23,8 +30,10 @@ window = sg.Window('Wireguard Client', layout)
 var_dict = {}
 decrypted_text = ""
 tempdir = tempfile.gettempdir() #gets default temp directory relative to user
-filename = '\\wgtunnel.conf' #sets name for temp .conf file that will be used for tunnel establishment
-name_only = 'wgtunnel' #used to identify tunnel interface when passing tunnel tear down command
+file_name = "\\wgtunnel.conf"
+file_path = tempdir + file_name #sets name for temp .conf file that will be used for tunnel establishment
+tunnel_name = 'wgtunnel' #used to identify tunnel interface when passing tunnel tear down command
+large_text = False #boolean state is used as switch in combination with 'INPUT- event for whether text should be enlarged or not after hitting enter key
 
 #the write_comf_file function is needed for the following reasons:
 #> WG is invoked via cmd and requires .conf file as input to begin tunnel session
@@ -32,7 +41,7 @@ name_only = 'wgtunnel' #used to identify tunnel interface when passing tunnel te
 # the function below writes the conf file to be used to establish the tunnel session with CR LF after each line (including the blank link separating
 # client from peer (server). It pulls details from the var_dict dictionary storing the data parsed from the decrypted conf file
 def write_conf_file():
-    with open(f"{tempdir}{filename}", "w", newline='\r\n') as conf_file:
+    with open(f"{tempdir}{file_name}", "w", newline='\r\n') as conf_file:
         conf_file.write("[Interface]\n")
         conf_file.write("PrivateKey = " + var_dict['PrivateKey'] + "\n")
         conf_file.write("Address = " + var_dict['Address'] + "\n")
@@ -50,8 +59,12 @@ def decryption(password, file):
     password = password.encode() #converts passed utf-8 byte string (decrypt function only works with byte strings)
     file = file #file for decryption
     key = key_derivation(password) #generates symmetric key instance to perform decryption
-    with open(file,  "rb") as encrypted_data:
-        nonce = encrypted_data.read(16) #reads first 16 bytes of encrypted file to grab nonce value for passing to key object generator
+    try:
+        with open(file,  "rb") as encrypted_data:
+            nonce = encrypted_data.read(16) #reads first 16 bytes of encrypted file to grab nonce value for passing to key object generator
+    except FileNotFoundError:
+        print("You must select a file")
+        return
     with open(file, "rb") as encrypted_data:
         encrypted_data.seek(16) #opens file again and moves  to 16 byte offset from beginning of file
         tag = encrypted_data.read(16) #reads only 16 bytes after 16 byte offset to get MAC tag for verification
@@ -62,16 +75,21 @@ def decryption(password, file):
     #deciphered_text = cipher.decrypt_and_verify(cipher_text2) #ciphertext decrypted and tag verified
     try:
         decrypted_text = cipher.decrypt_and_verify(cipher_text2, tag) #ciphertext decrypted and tag verified
+        window['-SUCCESS-'].update('Password correct')
     except ValueError:
         print("Decryption failed. Either your password is incorrect or the file has been altered")
         return 1 #if decryption fails, returns this value as output of func
 
-
+large_text = False
 while True:
     event,values = window.read()
-    tunnel = False #updated to True when connect is pressed and tunnel established. Updated to False again when disconnect pressed
+    print(large_text)
     if event == sg.WIN_CLOSED or event == 'Exit':
-        exit()
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            exit()
+        else:
+            exit()
     if event == 'Decrypt': #when decrypt button is pressed
         window['-ERROR-'].update('')
         #with open(values['-FILE-'], 'rb') as test_file:
@@ -79,10 +97,10 @@ while True:
         if result == 1: #checks if 1 was returned by decryption func (meaning decryption failed)
             window['-ERROR-'].update('Password incorrect')
             continue    # If result is 1, returns to start of loop to allow for new 'Decrypt' event (user can try entering password again)
-        else:
-            window['-SUCCESS-'].update('Password correct')
-        #data = test_file.read()
-        file_parser(decrypted_text, var_dict)
+        try:
+            file_parser(decrypted_text, var_dict)
+        except AttributeError:
+            continue
         window['-SERVER-'].update(var_dict['Endpoint'])
         window['-DNS-'].update(var_dict['DNS'])
         window['-CONNECT-'].update(visible=True)
@@ -90,12 +108,21 @@ while True:
         print(var_dict["PrivateKey"])
         write_conf_file()
     if event == '-CONNECT-': #when connect button is pressed
-        tunnel = True
+        os.system('cmd /C "wireguard /installtunnelservice %s"' % file_path)
+        #tunnel = True
         window['-CONNECT-'].update(visible=False) #makes connect button invisible once pressed
         window['-DISCONNECT-'].update(visible=True) #makes disconnect button visible
     if event == '-DISCONNECT-': #when disconnect button is pressed
-        tunnel = False
+        os.system('cmd /C "wireguard /uninstalltunnelservice %s"' % tunnel_name)
+        #tunnel = False
         window['-CONNECT-'].update(visible=True) #the above but reversed
         window['-DISCONNECT-'].update(visible=False)
+    if event == '-INPUT-' and large_text == False:
+        window['-BROWSE-'].update(font='Any 20')
+        large_text = True
+    elif event == '-INPUT-' and large_text == True:
+        window['-BROWSE-'].update(font='Any 10')
+        large_text = False
+
 
 window.close()
