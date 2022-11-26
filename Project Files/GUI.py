@@ -14,13 +14,13 @@ import tempfile
 #1.4.3 > text contrast ratio of at least 4.5:1
 
 sg.theme('SystemDefault')
-layout = [[sg.Text('Click browse to find your configuration file', font=None, key='-BROWSE-'), sg.Push(), sg.InputText(readonly=True,), sg.FileBrowse('Browse', key='-FILE-', font=None)],
-          [sg.Text('Enter password to decrypt file here'), sg.Push(), sg.InputText(key='-PASSWORD-', password_char='*')],
+layout = [[sg.Text('Click browse to find your configuration file', font=None, key='-BROWSE-'), sg.Push(), sg.InputText(readonly=True,), sg.FileBrowse('Browse', key='-FILE-')],
+          [sg.Text('Enter password to decrypt file here          ', font=None, key='-PASS_PROMPT-'), sg.InputText(key='-PASSWORD-', password_char='*'), sg.Checkbox('Show Password', key='-CHECKBOX-', enable_events=True)],
           [sg.Text('', text_color='Red', key='-ERROR-')],
           [sg.Text('', text_color='Green', key='-SUCCESS-')],
           [sg.Button('Decrypt')],
-          [sg.Text('Server Address'), sg.Input(readonly=True, key='-SERVER-', size=(25,1)), sg.Push(), sg.Button('Connect', visible=False, key='-CONNECT-')],
-          [sg.Text('DNS                '), sg.Input(readonly=True, key='-DNS-', size=(25,1)), sg.Push(), sg.Button('Disconnect', visible=False, key='-DISCONNECT-')],
+          [sg.Text('Server Address: ', font=None, key='-S-'), sg.Text('', key='-SERVER-', background_color=None), sg.Push(), sg.Button('Connect', visible=False, key='-CONNECT-')],
+          [sg.Text('DNS: ', font=None, key='-D-'), sg.Text('', key='-DNS-', background_color=None), sg.Push(), sg.Button('Disconnect', visible=False, key='-DISCONNECT-')],
           [sg.Button(visible=False, key='-INPUT-', bind_return_key=True)]]
 
 
@@ -101,27 +101,43 @@ while True:
             file_parser(decrypted_text, var_dict)
         except AttributeError:
             continue
-        window['-SERVER-'].update(var_dict['Endpoint'])
-        window['-DNS-'].update(var_dict['DNS'])
+        window['-SERVER-'].update(var_dict['Endpoint'], background_color='white')
+        window['-DNS-'].update(var_dict['DNS'], background_color='white')
         window['-CONNECT-'].update(visible=True)
         print(var_dict)
         print(var_dict["PrivateKey"])
         write_conf_file()
     if event == '-CONNECT-': #when connect button is pressed
         os.system('cmd /C "wireguard /installtunnelservice %s"' % file_path)
-        #tunnel = True
         window['-CONNECT-'].update(visible=False) #makes connect button invisible once pressed
         window['-DISCONNECT-'].update(visible=True) #makes disconnect button visible
     if event == '-DISCONNECT-': #when disconnect button is pressed
         os.system('cmd /C "wireguard /uninstalltunnelservice %s"' % tunnel_name)
-        #tunnel = False
         window['-CONNECT-'].update(visible=True) #the above but reversed
         window['-DISCONNECT-'].update(visible=False)
+    if values['-CHECKBOX-'] == True:
+        window['-PASSWORD-'].update(password_char='')
+    if values['-CHECKBOX-'] == False:
+        window['-PASSWORD-'].update(password_char='*')
     if event == '-INPUT-' and large_text == False:
         window['-BROWSE-'].update(font='Any 20')
+        window['-ERROR-'].update(font='Any 20')
+        window['-SUCCESS-'].update(font='Any 20')
+        window['-S-'].update(font='Any 20')
+        window['-D-'].update(font='Any 20')
+        window['-PASS_PROMPT-'].update(font='Any 20')
+        window['-SERVER-'].update(font='Any 20')
+        window['-DNS-'].update(font='Any 20')
         large_text = True
     elif event == '-INPUT-' and large_text == True:
         window['-BROWSE-'].update(font='Any 10')
+        window['-ERROR-'].update(font='Any 10')
+        window['-SUCCESS-'].update(font='Any 10')
+        window['-S-'].update(font='Any 10')
+        window['-D-'].update(font='Any 10')
+        window['-PASS_PROMPT-'].update(font='Any 10')
+        window['-SERVER-'].update(font='Any 10')
+        window['-DNS-'].update(font='Any 10')
         large_text = False
 
 
